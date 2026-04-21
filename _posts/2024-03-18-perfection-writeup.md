@@ -153,7 +153,7 @@ After sending the payload via burpsuite as shown before, we get a shell for the 
 fb2f98f00238c1f11aa55beb28a6613d
 ```
 
-> **Reference in case you are interested in the SSTI attack:** [HackTricks — SSTI](https://book.hacktricks.xyz/pentesting-web/ssti-server-side-template-injection)
+> **Reference in case you are interested in the SSTI attack:** [HackTricks — SSTI](https://hacktricks.wiki/en/pentesting-web/ssti-server-side-template-injection/index.html)
 
 ---
 
