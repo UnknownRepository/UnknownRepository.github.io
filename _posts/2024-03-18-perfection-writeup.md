@@ -18,7 +18,8 @@ tags: [SSTI, Ruby, Sinatra, hashcat, sudo]
 ## Summary
 
 Perfection is a Linux machine hosting a Ruby-based web application (Sinatra + WEBrick) that implements a weighted grade calculator. The application attempts to block malicious input, but the filter can be bypassed using a URL-encoded newline character, allowing Server-Side Template Injection via Ruby's ERB syntax. After gaining a shell, privilege escalation is achieved by finding a SQLite database with password hashes and an email that leaks the password format, enabling a targeted hashcat attack that leads to full sudo access.
-I completed this machine on 18/03/2024 and decided to write a walkthrough hopefully so it helps you understand a fellow pentester's thought process.
+
+I completed this machine on 18/03/2024, which means the machine was still active (no walkthroughs), so I have decided to write a walkthrough hopefully so it helps you understand a fellow pentester's thought process.
 
 ---
 
