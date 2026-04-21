@@ -2,7 +2,7 @@
 layout: post
 title: "HTB Write-Up: Perfection"
 Author: Pedro Pereira
-date: 2024-03-18
+date: 2026-04-21
 categories: [HackTheBox, Easy, Linux]
 tags: [SSTI, Ruby, Sinatra, hashcat, sudo]
 ---
