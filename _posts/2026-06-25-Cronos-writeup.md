@@ -101,7 +101,7 @@ This would also give us an hint on the domain with no guessing needed :)
 
 The main site was Laravel-based. Following the Documentation link redirected to the Laravel docs, which confirmed the PHP framework. 
 
-<img width="1122" height="890" alt="image" src="https://github.com/user-attachments/assets/cb0ed410-5728-4b2b-b2fd-fdbad7c52d4b" />
+<img width="1300" height="890" alt="image" src="https://github.com/user-attachments/assets/cb0ed410-5728-4b2b-b2fd-fdbad7c52d4b" />
 
 I did poked around, and was a little lost for a little bit, but there was really nothing to attack here. The interesting stuff was on the subdomain.
 
