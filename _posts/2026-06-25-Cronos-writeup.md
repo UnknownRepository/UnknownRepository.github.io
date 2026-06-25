@@ -38,12 +38,12 @@ PORT   STATE SERVICE VERSION
 |_http-title: Apache2 Ubuntu Default Page: It works
 ```
 
-Three ports were find: 
+Three ports were found: 
 - SSH on 22, 
 - DNS on 53, 
 - HTTP on 80. 
 
-Port 80 seemed like nothing, just the Apache default page, which usually means we need to find a DNS name to add to our `/etc/hosts`.  Additionally, the port 53 gave us an hint that it probably is using DNS for something. Spoiler Alert: **it was**.
+Port 80 seemed like nothing, just the Apache default page, which usually means we need to find a DNS name to add to our `/etc/hosts`.  Additionally, the port 53 gave us a hint that it probably is using DNS for something. Spoiler Alert: **it was**.
 
 ### Directory Enumeration
 
@@ -68,7 +68,7 @@ With port 53 open, the first move is adding `cronos.htb` to `/etc/hosts` and see
 
 <img width="1461" alt="image" src="https://github.com/user-attachments/assets/e8e76bbd-0745-4fba-8fd9-6cdf5a112562" />
 
-Browsing to `http://cronos.htb/` now showed a proper website instead of the Apache default, confirming that what we were missing was the DNS name. Of course, this was a "guess", but attackers should try everything, it's a trial and error sometimes...
+Browsing to `http://cronos.htb/` now showed a proper website instead of the Apache default, confirming that what we were missing was the DNS name. Of course, this was a "guess", but attackers should try everything, it's a trial and error sometimes... Besides, in HTB, the box name is almost always the hostname, so cronos.htb made the most sense
 
 But the more interesting thing DNS can give us is a zone transfer. When misconfigured, a DNS server will happily hand over its entire record set to anyone who asks:
 
@@ -81,12 +81,6 @@ dig axfr @10.10.10.13 cronos.htb
 It worked. Zone transfer succeeded and returned every DNS record for the domain, subdomains included. Among them: **admin.cronos.htb**.
 
 No brute-forcing, no wordlists, just the server handing you its entire map. Added both hostnames to `/etc/hosts` and moved on.
-
-You can also confirm the hostname directly:
-
-```bash
-nslookup 10.10.10.13 10.10.10.13
-```
 
 <img width="547" alt="image" src="https://github.com/user-attachments/assets/2269803b-cbb5-4c59-9dfe-652e37da9280" />
 
@@ -103,7 +97,7 @@ The main site was Laravel-based. Following the Documentation link redirected to 
 
 <img width="1300" alt="image" src="https://github.com/user-attachments/assets/cb0ed410-5728-4b2b-b2fd-fdbad7c52d4b" />
 
-I did poked around, and was a little lost for a little bit, but there was really nothing to attack here. The interesting stuff was on the subdomain.
+I did poke around, and was a little lost for a little bit, but there was really nothing to attack here. The interesting stuff was on the subdomain.
 
 ### admin.cronos.htb
 
@@ -149,6 +143,7 @@ Shell came back as `www-data`.
 
 <img width="487" alt="image" src="https://github.com/user-attachments/assets/f0eeba45-86d1-4d72-a083-e08622877c64" />
 
+The user flag can be obtained from `/home/noulis/user.txt`.
 ---
 
 ## Post-Exploitation
