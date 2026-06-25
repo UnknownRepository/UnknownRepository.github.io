@@ -1,5 +1,6 @@
 ---
 layout: post
+title	HTB Write-Up: Cronos
 Author: Pedro Pereira
 date: 2024-11-11
 categories: [HackTheBox, Medium, Linux]
