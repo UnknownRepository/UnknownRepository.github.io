@@ -1,7 +1,7 @@
 ---
 layout: post
-title	HTB Write-Up: Cronos
-Author: Pedro Pereira
+title: "HTB Write-Up: Cronos"
+author: Pedro Pereira
 date: 2026-06-25
 categories: [HackTheBox, Medium, Linux]
 tags: [DNS, ZoneTransfer, SQLi, CommandInjection, CronJob, Laravel, PHP]
