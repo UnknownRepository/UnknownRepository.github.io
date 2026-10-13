@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Freelance Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: tabbed workbench. Day = entries + copyable report stub; Month = billing for the recibo; Year = income and tax estimates; Settings = client, rate, tax rules. */
+:root{
+  --bg:#eef1f5; --surface:#ffffff; --sunk:#f5f7fa; --ink:#141c27; --muted:#5a6779; --line:#d6dde7;
+  --accent:#2a4fd6; --accent-ink:#ffffff; --accent-soft:#e3e9fc;
+  --ok:#1b7a4c; --ok-soft:#dcf1e6; --warn:#9a5b00; --warn-soft:#fbefd9; --danger:#b3261e; --danger-soft:#fbe4e2;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e131a; --surface:#161d27; --sunk:#111821; --ink:#e4e9f1; --muted:#93a0b3; --line:#283343;
+    --accent:#86a0ff; --accent-ink:#0b1122; --accent-soft:#1d2744;
+    --ok:#5cc897; --ok-soft:#14301f; --warn:#f0b25a; --warn-soft:#33250f; --danger:#ff8f86; --danger-soft:#3a1715;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e131a; --surface:#161d27; --sunk:#111821; --ink:#e4e9f1; --muted:#93a0b3; --line:#283343;
+  --accent:#86a0ff; --accent-ink:#0b1122; --accent-soft:#1d2744;
+  --ok:#5cc897; --ok-soft:#14301f; --warn:#f0b25a; --warn-soft:#33250f; --danger:#ff8f86; --danger-soft:#3a1715;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:18px 64px;display:flex;flex-direction:column;gap:16px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--f-display);font-weight:700;font-size:1.65rem;margin:0}
+h1 span{color:var(--accent)}
+h2{font-family:var(--f-display);font-weight:600;font-size:1.15rem;margin:0;text-wrap:balance}
+.status{font-size:.8rem;color:var(--muted);display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+.status i{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.status[data-s="saved"] i{background:var(--ok)}
+.status[data-s="saving"] i{background:var(--accent)}
+.status[data-s="error"] i{background:var(--danger)}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{border:0;background:transparent;padding:10px 14px;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab:hover{color:var(--ink)}
+
+.banner{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-radius:8px;background:var(--warn-soft);color:var(--warn);font-size:.9rem}
+.banner button{border:0;background:transparent;color:inherit;font-weight:600;text-decoration:underline;padding:0}
+.timerbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;border-radius:8px;background:var(--accent);color:var(--accent-ink)}
+.timerbar .clock{font-family:var(--f-mono);font-weight:600;font-size:1.05rem}
+.timerbar .what{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9rem}
+.timerbar button{border:1px solid currentColor;background:transparent;color:inherit;border-radius:6px;padding:5px 12px;font-weight:600}
+.pulse{width:9px;height:9px;border-radius:50%;background:currentColor}
+@media (prefers-reduced-motion:no-preference){.pulse{animation:p 1.4s ease-in-out infinite}@keyframes p{50%{opacity:.3}}}
+
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+@media (min-width:900px){.grid{grid-template-columns:minmax(0,1fr) 380px}}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+
+.bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.spacer{flex:1}
+.iconbtn{width:36px;height:36px;display:inline-grid;place-items:center;border:1px solid var(--line);background:var(--sunk);border-radius:8px;font-size:1.1rem;line-height:1}
+.iconbtn:hover{border-color:var(--accent)}
+.pick{position:relative;display:inline-flex;align-items:center;padding:4px 10px;border-radius:8px;border:1px solid transparent}
+.pick:hover{border-color:var(--line)}
+.pick input{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}
+.bigdate{font-family:var(--f-display);font-weight:600;font-size:1.3rem}
+.ghost{border:1px solid var(--line);background:transparent;border-radius:8px;padding:6px 12px;font-size:.85rem;font-weight:500}
+.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.ghost:disabled{opacity:.45;cursor:default;color:inherit;border-color:var(--line)}
+.primary{height:44px;padding:0 18px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-weight:600}
+.primary:hover{filter:brightness(1.07)}
+.primary:disabled{opacity:.5;cursor:default;filter:none}
+.select{height:36px;border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:0 8px}
+
+.progress{display:flex;flex-direction:column;gap:6px}
+.progress .lbl{display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted)}
+.progress .lbl b{color:var(--ink);font-family:var(--f-mono);font-weight:600}
+.track{height:6px;background:var(--sunk);border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.fill{height:100%;background:var(--accent);border-radius:99px;transition:width .2s}
+.fill.over{background:var(--warn)}
+
+.add{display:flex;gap:8px;flex-wrap:wrap}
+.add input{flex:1 1 240px;min-width:0;height:44px;padding:0 14px;border:1px solid var(--line);border-radius:8px;background:var(--sunk);font-family:var(--f-mono);font-size:.9rem}
+.add input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.add .ghost{height:44px}
+.hint{font-size:.8rem;color:var(--muted);margin-top:-6px}
+.hint code{font-family:var(--f-mono);font-size:.76rem;background:var(--sunk);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
+.label{font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px dashed var(--line);background:transparent;border-radius:999px;padding:5px 11px;font-size:.82rem;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip b{font-family:var(--f-mono);font-weight:600;color:var(--accent);margin-right:4px}
+.chip:hover{border-style:solid;border-color:var(--accent)}
+
+.list{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.row{display:grid;grid-template-columns:104px minmax(0,1fr);grid-template-areas:"t d" "h a";gap:6px 8px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--sunk)}
+.row.running{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+@media (min-width:640px){.row{grid-template-columns:104px minmax(0,1fr) 84px auto;grid-template-areas:"t d h a"}}
+.row input{height:36px;border:1px solid transparent;background:var(--surface);border-radius:6px;padding:0 9px;min-width:0;width:100%}
+.row input:focus{border-color:var(--accent);outline:none}
+.row .t{grid-area:t;font-family:var(--f-mono);font-weight:600;color:var(--accent)}
+.row .t::placeholder{color:var(--muted);font-weight:400}
+.row .d{grid-area:d}
+.row .h{grid-area:h;font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.row .h:disabled{color:var(--accent);font-weight:600;opacity:1}
+.row .acts{grid-area:a;display:flex;gap:2px;align-items:center;justify-content:flex-end}
+.mini{width:32px;height:32px;border:0;background:transparent;border-radius:6px;color:var(--muted);font-size:.9rem;display:inline-grid;place-items:center}
+.mini:hover{background:var(--surface);color:var(--ink)}
+.mini.play{color:var(--accent)}
+.mini.play.on{background:var(--accent);color:var(--accent-ink)}
+.mini.del:hover{color:var(--danger);background:var(--danger-soft)}
+.mini:disabled{opacity:.3;cursor:default;background:transparent}
+.empty{border:1px dashed var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:10px;color:var(--muted);font-size:.9rem}
+.empty pre{margin:0;font-family:var(--f-mono);font-size:.8rem;white-space:pre-wrap}
+.foot{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+.stub{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.stub-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:14px 16px 12px;border-bottom:2px dashed var(--line)}
+.stub-head .meta{font-family:var(--f-mono);font-size:.75rem;color:var(--muted);white-space:nowrap}
+.stub::before,.stub::after{content:"";position:absolute;top:44px;width:14px;height:14px;border-radius:50%;background:var(--bg);border:1px solid var(--line)}
+.stub::before{left:-8px}.stub::after{right:-8px}
+.stub textarea{display:block;width:100%;min-height:150px;resize:vertical;border:0;background:transparent;padding:14px 16px;font-family:var(--f-mono);font-size:.84rem;line-height:1.7;white-space:pre;overflow-x:auto}
+.stub textarea:focus{outline:none}
+.stub-foot{display:flex;gap:8px;padding:0 16px 16px;align-items:center;flex-wrap:wrap}
+.stub-foot .primary{flex:1}
+.okmsg{font-size:.8rem;color:var(--ok);font-weight:500}
+.sent{font-size:.78rem;font-weight:600;padding:4px 9px;border-radius:999px;border:0;background:var(--ok-soft);color:var(--ok)}
+
+.week{display:flex;flex-direction:column;gap:2px}
+.wrow{display:grid;grid-template-columns:8.5ch minmax(0,1fr) auto 10px;gap:10px;align-items:center;padding:7px 10px;border-radius:7px;border:0;background:transparent;text-align:left;width:100%}
+.wrow:hover{background:var(--sunk)}
+.wrow.on{background:var(--accent-soft)}
+.wrow .dt{font-family:var(--f-mono);font-size:.8rem;font-weight:600}
+.wrow .sm{font-size:.82rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wrow .hh{font-family:var(--f-mono);font-size:.82rem;font-variant-numeric:tabular-nums}
+.dot{width:8px;height:8px;border-radius:50%;border:1.5px solid var(--line)}
+.dot.ok{background:var(--ok);border-color:var(--ok)}
+.wtotal{display:flex;justify-content:space-between;padding:8px 10px 0;border-top:1px solid var(--line);font-size:.85rem;color:var(--muted)}
+.wtotal b{color:var(--ink);font-family:var(--f-mono)}
+
+/* month & year */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile{padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);display:flex;flex-direction:column;gap:2px;min-width:0}
+.tile .k{font-size:.75rem;color:var(--muted)}
+.tile .v{font-family:var(--f-mono);font-size:1.15rem;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.tile.hero{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tile.hero .k{color:inherit;opacity:.85}
+.tile.keep .v{color:var(--warn)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:.87rem}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--sunk)}
+td.r,th.r{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover td{background:var(--sunk)}
+tfoot td{font-weight:600;background:var(--sunk);border-top:1px solid var(--line);border-bottom:0}
+.muted{color:var(--muted)}
+.note{font-size:.8rem;color:var(--muted);line-height:1.5}
+.note b{color:var(--ink);font-weight:600}
+
+.chart{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:6px;align-items:end;height:160px;padding:8px 4px 0;border-bottom:1px solid var(--line)}
+.chart .c{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;min-width:0}
+.chart .b{width:100%;max-width:34px;background:var(--accent);border-radius:4px 4px 0 0;min-height:2px}
+.chart .b.zero{background:var(--line)}
+.chart .c.cur .b{background:var(--warn)}
+.chart .v{font-family:var(--f-mono);font-size:.62rem;color:var(--muted);white-space:nowrap}
+.months{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:6px;font-size:.7rem;color:var(--muted);text-align:center}
+.meter{display:flex;flex-direction:column;gap:6px}
+
+/* settings */
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 16px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:.82rem;font-weight:500}
+.field input[type=text],.field input[type=number],.field input[type=date],.field select{height:38px;border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:0 10px;width:100%}
+.field input:focus,.field select:focus{border-color:var(--accent);outline:none}
+.field small{color:var(--muted);font-size:.76rem}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:.88rem}
+.check input{margin-top:3px;width:16px;height:16px;accent-color:var(--accent)}
+.check small{display:block;color:var(--muted);font-size:.76rem}
+.clientrow{display:grid;grid-template-columns:minmax(0,1fr) 120px auto;gap:8px;align-items:center}
+.clientrow input{height:38px;border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:0 10px;width:100%;min-width:0}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;font-size:.88rem;display:flex;gap:14px;align-items:center;box-shadow:0 6px 24px rgba(0,0,0,.25);max-width:calc(100% - 32px);z-index:5}
+.toast button{border:0;background:transparent;color:var(--accent-soft);font-weight:600;text-decoration:underline;padding:0}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Freelance <span>Desk</span></h1>
+    <span style="margin-left:auto"></span>
+    <div class="status" id="status" data-s="local"><i></i><span id="statusText">Loading…</span></div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="day" aria-selected="true">Day</button>
+    <button class="tab" role="tab" data-tab="month" aria-selected="false">Month &amp; billing</button>
+    <button class="tab" role="tab" data-tab="year" aria-selected="false">Income &amp; taxes</button>
+    <button class="tab" role="tab" data-tab="settings" aria-selected="false">Settings</button>
+  </nav>
+
+  <div class="banner" id="setupBanner" hidden>Add your client and hourly rate to see what each day earns. <button data-goto="settings">Open settings</button></div>
+  <div class="timerbar" id="timerbar" hidden><span class="pulse"></span><span class="clock" id="tbClock">0:00:00</span><span class="what" id="tbWhat"></span><button id="tbOpen">Open day</button><button id="tbStop">Stop</button></div>
+
+  <!-- DAY -->
+  <section id="v-day" class="grid">
+    <div class="col">
+      <div class="panel">
+        <div class="bar">
+          <button class="iconbtn" id="prev" aria-label="Previous day">‹</button>
+          <label class="pick"><span class="bigdate" id="dayname">—</span><input type="date" id="date" aria-label="Pick a date"></label>
+          <button class="iconbtn" id="next" aria-label="Next day">›</button>
+          <button class="ghost" id="today">Today</button>
+          <span class="spacer"></span>
+          <select class="select" id="clientSel" aria-label="Client" hidden></select>
+        </div>
+        <div class="progress">
+          <div class="lbl"><span>Logged <b id="dayHours">0h</b> of <span id="dayTarget">8h</span></span><span id="dayMoney" class="num"></span></div>
+          <div class="track"><div class="fill" id="dayFill" style="width:0"></div></div>
+        </div>
+        <div class="add">
+          <input id="quick" type="text" autocomplete="off" placeholder="8238293 Building a web server 2h" aria-label="Add entry">
+          <button class="primary" id="addBtn">Add</button>
+          <button class="ghost" id="startBtn" title="Add and start the timer">▶ Start timer</button>
+        </div>
+        <div class="hint">Ticket number first (optional), then the description, then hours at the end if you know them: <code>2h</code> <code>1h30</code> <code>1.5</code> <code>45m</code>. Paste several report lines to add them all.</div>
+        <div id="recentWrap" hidden><div class="label" style="margin-bottom:6px">Recent</div><div class="chips" id="recent"></div></div>
+        <ul class="list" id="list"></ul>
+        <div class="empty" id="empty" hidden>
+          <span id="emptyText"></span>
+          <pre>8238293 (Building a web server) - 3h
+VMware task meeting - 1h</pre>
+          <div><button class="ghost" id="copyPrevEmpty" hidden></button></div>
+        </div>
+        <div class="foot" id="foot"><button class="ghost" id="copyPrev"></button><span class="spacer"></span><button class="ghost" id="clear">Clear day</button></div>
+      </div>
+    </div>
+    <aside class="col">
+      <div class="stub">
+        <div class="stub-head"><h2>Daily report</h2><span class="meta" id="stubMeta"></span></div>
+        <textarea id="out" readonly spellcheck="false" aria-label="Report text" placeholder="Your report shows up here."></textarea>
+        <div class="stub-foot"><button class="primary" id="copy">Copy report</button><span class="okmsg" id="copied" hidden></span><button class="sent" id="sent" hidden title="Click to unmark">Reported ✓</button></div>
+      </div>
+      <div class="panel">
+        <div class="bar"><span class="label">This week</span><span class="spacer"></span><button class="ghost" id="copyWeek">Copy week</button></div>
+        <div class="week" id="week"></div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- MONTH -->
+  <section id="v-month" class="col" hidden>
+    <div class="panel">
+      <div class="bar">
+        <button class="iconbtn" id="mPrev" aria-label="Previous month">‹</button>
+        <span class="bigdate" id="mName">—</span>
+        <button class="iconbtn" id="mNext" aria-label="Next month">›</button>
+        <span class="spacer"></span>
+        <select class="select" id="mClient" aria-label="Client" hidden></select>
+      </div>
+      <div class="tiles" id="mTiles"></div>
+      <div class="note" id="mNote"></div>
+      <div class="bar">
+        <button class="primary" id="mCopy">Copy invoice summary</button>
+        <button class="ghost" id="mCsv">Export CSV</button>
+        <span class="okmsg" id="mMsg" hidden></span>
+      </div>
+    </div>
+    <div class="grid" style="grid-template-columns:minmax(0,1fr)">
+      <div class="panel">
+        <h2>Days worked</h2>
+        <div class="tablewrap"><table><thead><tr><th>Day</th><th class="r">Hours</th><th>Tickets &amp; meetings</th><th class="r">Amount</th></tr></thead><tbody id="mDays"></tbody><tfoot id="mDaysFoot"></tfoot></table></div>
+      </div>
+      <div class="panel">
+        <h2>Hours per ticket</h2>
+        <div class="tablewrap"><table><thead><tr><th>Ticket / item</th><th class="r">Days</th><th class="r">Hours</th><th class="r">Amount</th></tr></thead><tbody id="mTickets"></tbody></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- YEAR -->
+  <section id="v-year" class="col" hidden>
+    <div class="panel">
+      <div class="bar">
+        <button class="iconbtn" id="yPrev" aria-label="Previous year">‹</button>
+        <span class="bigdate" id="yName">—</span>
+        <button class="iconbtn" id="yNext" aria-label="Next year">›</button>
+      </div>
+      <div class="tiles" id="yTiles"></div>
+      <div>
+        <div class="chart" id="yChart"></div>
+        <div class="months" id="yMonths"></div>
+      </div>
+      <div class="meter" id="yMeter"></div>
+    </div>
+    <div class="panel">
+      <h2>Month by month</h2>
+      <div class="tablewrap"><table><thead><tr><th>Month</th><th class="r">Hours</th><th class="r">Billed</th><th class="r">IVA</th><th class="r">IRS withheld</th><th class="r">Received</th><th class="r">Seg. Social est.</th><th class="r">Set aside</th></tr></thead><tbody id="yRows"></tbody><tfoot id="yFoot"></tfoot></table></div>
+      <div class="note" id="yNotes"></div>
+    </div>
+    <div class="panel">
+      <h2 id="yIrsTitle">Final IRS estimate</h2>
+      <div class="form">
+        <div class="field"><label for="yAGross">Salary this year, gross (cat. A) €</label><input type="number" id="yAGross" min="0" step="0.01"><small>Total remuneration from your employer for this year, including subsídios.</small></div>
+        <div class="field"><label for="yAWith">IRS withheld from salary €</label><input type="number" id="yAWith" min="0" step="0.01"><small>"IRS Retido" on your last payslip.</small></div>
+        <div class="field"><label for="yExp">Expenses justified for the activity €</label><input type="number" id="yExp" min="0" step="0.01"><small>Invoices with your NIF assigned to your activity in e-fatura. Counts toward the 15% rule.</small></div>
+      </div>
+      <div class="tablewrap"><table><tbody id="yIrs"></tbody></table></div>
+      <div class="note" id="yIrsNote"></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="v-settings" class="col" hidden>
+    <div class="panel">
+      <h2>Client &amp; rate</h2>
+      <div id="clients" class="col" style="gap:8px"></div>
+      <div><button class="ghost" id="addClient">+ Add another client</button></div>
+      <div class="form">
+        <div class="field"><label for="sDesc">Invoice description</label><input type="text" id="sDesc"><small>Used in the invoice summary you paste into the recibo.</small></div>
+        <div class="field"><label for="sTarget">Daily target</label><input type="text" id="sTarget" inputmode="decimal"><small>e.g. 8h, 8h20 or 8.5</small></div>
+        <div class="field"><label for="sCycle">Billing period starts on day</label><input type="number" id="sCycle" min="1" max="28" step="1"><small>26 = from the 26th to the 25th. 1 = calendar month. The first period starts on your activity start date.</small></div>
+        <div class="field"><label for="sStyle">Hours in the report</label><select id="sStyle"><option value="hm">3h, 1h30, 45min</option><option value="dec">3h, 1.5h, 0.75h</option></select></div>
+      </div>
+      <label class="check"><input type="checkbox" id="sTotal"><span>Add a total line to the daily report<small>Adds "Total - 8h" as the last line.</small></span></label>
+    </div>
+    <div class="panel">
+      <h2>Taxes (Portugal, recibos verdes)</h2>
+      <div class="form">
+        <div class="field"><label for="sStart">Activity start date</label><input type="date" id="sStart"><small>The date you open activity at Finanças.</small></div>
+        <div class="field"><label for="sIva">IVA rate %</label><input type="number" id="sIva" min="0" max="30" step="1"></div>
+        <div class="field"><label for="sIrs">IRS withholding %</label><input type="number" id="sIrs" min="0" max="50" step="0.5"></div>
+        <div class="field"><label for="sSs">Segurança Social rate %</label><input type="number" id="sSs" min="0" max="40" step="0.1"></div>
+        <div class="field"><label for="sSsBase">Seg. Social base (% of billed)</label><input type="number" id="sSsBase" min="0" max="100" step="1"></div>
+      </div>
+      <label class="check"><input type="checkbox" id="sIvaOn"><span>Charge IVA on invoices<small>Turn off if you're exempt under art. 53 of the CIVA (turnover under €15,000/year).</small></span></label>
+      <label class="check"><input type="checkbox" id="sIrsOn"><span>Client withholds IRS<small>Turn off if you asked for the dispensa de retenção (expected income under €15,000/year).</small></span></label>
+      <label class="check"><input type="checkbox" id="sSsFirst"><span>First time as an independent worker<small>Segurança Social contributions start on the 1st day of the 12th month after you start.</small></span></label>
+      <h2 style="margin-top:6px">IRS Jovem &amp; final IRS estimate</h2>
+      <label class="check"><input type="checkbox" id="sJovem"><span>I have IRS Jovem<small>Exempt share of taxable income: year 1 100%, years 2–4 75%, years 5–7 50%, years 8–10 25%.</small></span></label>
+      <div class="form">
+        <div class="field"><label for="sJYear">IRS Jovem year in <span id="sJYearOfLbl">2026</span></label><input type="number" id="sJYear" min="1" max="10" step="1"><small>Later years count up automatically. Years with no income don't count.</small></div>
+        <div class="field"><label for="sJCap">Max exempt per year (€)</label><input type="number" id="sJCap" min="0" step="0.01"><small>55 × IAS. €29,542.15 in 2026.</small></div>
+        <div class="field"><label for="sCoef">Taxable share of billed (%)</label><input type="number" id="sCoef" min="0" max="100" step="1"><small>Regime simplificado: 75% for art. 151 services.</small></div>
+        <div class="field"><label for="sDedA">Specific deduction on salary (€)</label><input type="number" id="sDedA" min="0" step="0.01"><small>Cat. A dedução específica, 8.54 × IAS. Only used in years with a salary.</small></div>
+      </div>
+      <label class="check"><input type="checkbox" id="sRule15"><span>Apply the 15% rule<small>With the 75% coefficient, 15% of what you bill must be backed by expenses (beyond a fixed €4,104), or the gap is taxed.</small></span></label>
+      <div class="note">Salary and IRS withheld from it are entered per year in the Income &amp; taxes tab.</div>
+      <div class="note">Defaults: IVA 23%, IRS withholding 23% (art. 151 professions), Segurança Social 21.4% on 70% of what you bill. These are estimates to help you set money aside, not tax advice. Check the final figures on Portal das Finanças and Segurança Social Direta, or with an accountant.</div>
+    </div>
+    <div class="panel">
+      <h2>Backup</h2>
+      <div class="note">Export a copy of all your days and settings as a .json file, and import it on another device or browser. If this page saves only in this browser, clearing your browser data deletes everything, so export a backup regularly.</div>
+      <div class="bar">
+        <button class="ghost" id="bkExport">Export backup</button>
+        <label class="ghost" style="cursor:pointer" tabindex="0" id="bkImportLbl">Import backup<input type="file" id="bkImport" accept=".json,application/json" hidden></label>
+        <span class="okmsg" id="bkMsg" hidden></span>
+      </div>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden><span id="toastText"></span><button id="toastUndo" hidden>Undo</button></div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const LS='fdesk.v1',LS_TAB='fdesk.tab';
+const DEFAULTS={clients:[{id:'c1',name:'',rate:0}],activeClient:'c1',desc:'Prestação de serviços de consultoria informática',target:500/60,style:'hm',reportTotal:false,
+  cycleDay:26,rule15:true,dedA:4587.09,years:{},
+  activityStart:'2026-10-14',ssFirst:true,ssRate:21.4,ssBase:70,ivaOn:true,ivaRate:23,irsOn:true,irsRate:23,
+  jovemOn:true,jovemYear:5,jovemYearOf:2026,jovemCap:29542.15,coef:75,otherIncome:0};
+const BRACKETS=[[8342,12.5],[12587,15.7],[17838,21.2],[23089,24.1],[29397,31.1],[43090,34.9],[46566,43.1],[86634,44.6],[Infinity,48]];
+function irsTax(c){let t=0,prev=0;for(const[lim,r]of BRACKETS){if(c<=prev)break;t+=(Math.min(c,lim)-prev)*r/100;prev=lim}return t}
+function jovemYearFor(y){return S.jovemOn?(+S.jovemYear||0)+(y-(+S.jovemYearOf||2026)):0}
+function jovemPct(y){const n=jovemYearFor(y);if(n<1||n>10)return 0;return n===1?100:n<=4?75:n<=7?50:25}
+let S=JSON.parse(JSON.stringify(DEFAULTS));
+let days={},current=todayISO(),tab='day',mCur=current.slice(0,7),yCur=+current.slice(0,4);
+let db=null,coll=null,settled=false,downloads=null;
+const pending=new Map(),chains=new Map(),timers=new Map();let sPending=0,sChain=Promise.resolve(),sTimer=null;
+
+/* ---------- utils ---------- */
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function todayISO(){return iso(new Date())}
+function pISO(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function shift(s,n){const d=pISO(s);d.setDate(d.getDate()+n);return iso(d)}
+function lbl(s,long){return pISO(s).toLocaleDateString('en-GB',long?{weekday:'long',day:'numeric',month:'short'}:{weekday:'short',day:'numeric',month:'short'})}
+function monthName(ym){const[y,m]=ym.split('-').map(Number);return new Date(y,m-1,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'})}
+function monthPT(ym){const[y,m]=ym.split('-').map(Number);return new Date(y,m-1,1).toLocaleDateString('pt-PT',{month:'long',year:'numeric'})}
+function shiftMonth(ym,n){const[y,m]=ym.split('-').map(Number);const d=new Date(y,m-1+n,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
+function weekStart(s){const d=pISO(s);d.setDate(d.getDate()-((d.getDay()+6)%7));return iso(d)}
+/* billing periods: identified by the month they are invoiced in (the month holding the end day) */
+function lastDay(ym){const[y,m]=ym.split('-').map(Number);return new Date(y,m,0).getDate()}
+function cyc(){const c=parseInt(S.cycleDay,10);return c>=2&&c<=28?c:1}
+function periodOf(d){const c=cyc();if(c===1)return d.slice(0,7);return +d.slice(8)>=c?shiftMonth(d.slice(0,7),1):d.slice(0,7)}
+function periodRange(ym){const c=cyc();let s,e;
+  if(c===1){s=ym+'-01';e=ym+'-'+String(lastDay(ym)).padStart(2,'0')}
+  else{s=shiftMonth(ym,-1)+'-'+String(c).padStart(2,'0');e=ym+'-'+String(c-1).padStart(2,'0')}
+  if(S.activityStart&&s<S.activityStart)s=S.activityStart;return{s,e}}
+function fmtRange(r,loc){const o={day:'numeric',month:'short'};if(r.s>r.e)return'—';return pISO(r.s).toLocaleDateString(loc||'en-GB',o)+' – '+pISO(r.e).toLocaleDateString(loc||'en-GB',o)}
+function uid(){return Math.random().toString(36).slice(2,10)}
+const EUR=new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'});
+function eur(v){return EUR.format(Math.round(v*100)/100)}
+function fmtH(min,style){min=Math.max(0,Math.round(min));style=style||S.style;
+  if(style==='dec'){return (Math.round(min/60*100)/100)+'h'}
+  const h=Math.floor(min/60),m=min%60;if(!min)return'0h';if(!h)return m+'min';return m?h+'h'+String(m).padStart(2,'0'):h+'h'}
+function fmtClock(ms){const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/3600)+':'+String(Math.floor(s/60)%60).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function parseH(v){v=String(v||'').trim().toLowerCase().replace(/\s+/g,'');if(!v)return 0;let m;
+  if((m=v.match(/^(\d+)(?:h|:)(\d{1,2})(?:m|min)?$/)))return(+m[1])*60+(+m[2]);
+  if((m=v.match(/^(\d+(?:[.,]\d+)?)h?$/)))return Math.round(parseFloat(m[1].replace(',','.'))*60);
+  if((m=v.match(/^(\d+)(?:m|min)$/)))return +m[1];
+  return null}
+
+/* ---------- data ---------- */
+function cleanE(e){return{id:String(e.id||uid()),clientId:String(e.clientId||S.activeClient),ticket:String(e.ticket||'').trim(),desc:String(e.desc||''),minutes:Math.max(0,Math.round(+e.minutes||0)),running:e.running||null}}
+function normDay(x){return{date:x.date,entries:Array.isArray(x.entries)?x.entries.map(cleanE):[],sent:(x.sent&&typeof x.sent==='object')?{...x.sent}:{}}}
+function day(d){return days[d]||(days[d]={date:d,entries:[],sent:{}})}
+function client(id){return S.clients.find(c=>c.id===id)||S.clients[0]}
+function rate(id){return +(client(id)||{}).rate||0}
+function live(e){return e.minutes+(e.running?Math.floor((Date.now()-Date.parse(e.running))/60000):0)}
+function ents(d,cid){return days[d]?days[d].entries.filter(e=>e.clientId===(cid||S.activeClient)):[]}
+function valid(e){return e.ticket||e.desc.trim()}
+function hasDay(d,cid){return ents(d,cid).some(valid)}
+function dayMin(d,cid){return ents(d,cid).filter(valid).reduce((a,e)=>a+live(e),0)}
+function line(e){const t=e.ticket,d=e.desc.trim();return(t?(d?t+' ('+d+')':t):d)+' - '+fmtH(live(e))}
+function report(d,cid){const es=ents(d,cid).filter(valid);if(!es.length)return'';const ls=es.map(line);if(S.reportTotal)ls.push('Total - '+fmtH(dayMin(d,cid)));return ls.join('\n')}
+function findRunning(){for(const k in days)for(const e of days[k].entries)if(e.running)return{d:k,e};return null}
+
+function parseLine(raw){
+  let s=raw.replace(/^\s*(?:[-*•]|\d+[.)])\s+(?=\S)/,'').trim();if(!s)return null;
+  let minutes=0,m;
+  // trailing " - 3h" or " 3h"
+  m=s.match(/(?:\s+[-–]\s*|\s+)(\d+(?:[.,]\d+)?\s*h(?:\s*\d{1,2}(?:m|min)?)?|\d+:\d{2}|\d+\s*m(?:in)?|\d+(?:[.,]\d+)?)\s*$/i);
+  if(m){const p=parseH(m[1]);const isBareNum=/^\d+$/.test(m[1].trim());
+    // a bare trailing integer only counts as hours if small (avoid eating ticket numbers)
+    if(p!==null&&!(isBareNum&&(+m[1]>16||s.trim()===m[1].trim()))){minutes=p;s=s.slice(0,m.index).trim()}}
+  s=s.replace(/\s*[-–]\s*$/,'').trim();
+  m=s.match(/^#?(\d{3,})\s*\((.*)\)$/);
+  if(m)return{ticket:m[1],desc:m[2].trim(),minutes};
+  m=s.match(/^#?(\d{3,})(?:[\s:–-]+(.*))?$/);
+  if(m)return{ticket:m[1],desc:(m[2]||'').trim(),minutes};
+  return s?{ticket:'',desc:s,minutes}:null;
+}
+
+/* ---------- persistence ---------- */
+function loadLocal(){try{const r=JSON.parse(localStorage.getItem(LS)||'null');if(r){if(r.settings)S={...DEFAULTS,...r.settings};if(r.days)for(const k in r.days)if(r.days[k]&&r.days[k].date)days[k]=normDay(r.days[k])}}catch(e){}
+  try{const t=localStorage.getItem(LS_TAB);if(t&&$('#v-'+t))tab=t}catch(e){}}
+function saveLocal(){try{localStorage.setItem(LS,JSON.stringify({settings:S,days}))}catch(e){}}
+function setStatus(s,txt){$('#status').dataset.s=s;$('#statusText').textContent=txt||({saved:'Synced',saving:'Saving…',local:'Saved in this browser',error:'Not saved — check connection'})[s]}
+function touch(d){const v=(pending.get(d)||0)+1;pending.set(d,v);saveLocal();clearTimeout(timers.get(d));
+  if(!db){pending.delete(d);setStatus('local');return}
+  setStatus('saving');timers.set(d,setTimeout(()=>flush(d,v,false),500))}
+function flush(d,v,retry){const p=(chains.get(d)||Promise.resolve()).then(async()=>{
+  const x=days[d],ref=coll.doc('day-'+d);
+  try{if(!x||(!x.entries.length&&!Object.keys(x.sent).length))await ref.delete();
+    else await ref.set({kind:'day',date:d,entries:x.entries.map(cleanE),sent:x.sent,updatedAt:new Date().toISOString()});
+    if(pending.get(d)===v)pending.delete(d);if(!pending.size&&!sPending)setStatus('saved')}
+  catch(e){fail(e,()=>flush(d,v,true),retry)}});chains.set(d,p)}
+function touchS(){saveLocal();if(!db){setStatus('local');return}sPending++;const v=sPending;setStatus('saving');clearTimeout(sTimer);
+  sTimer=setTimeout(()=>flushS(v,false),500)}
+function flushS(v,retry){sChain=sChain.then(async()=>{try{await coll.doc('settings').set({kind:'settings',...S,updatedAt:new Date().toISOString()});if(sPending===v)sPending=0;if(!pending.size&&!sPending)setStatus('saved')}catch(e){fail(e,()=>flushS(v,true),retry)}})}
+function fail(e,again,retry){const c=e&&e.code;if(c==='unavailable'&&!retry){setTimeout(again,800+Math.random()*900);return}
+  setStatus('error',c==='quota_exceeded'?'Storage full — clear old days':undefined)}
+
+async function connect(){
+  if(!(window.claude&&window.claude.use)){setStatus('local');return}
+  try{
+    window.claude.use('downloads').then(d=>{downloads=d}).catch(()=>{});
+    const[d,u]=await Promise.all([window.claude.use('db'),window.claude.use('user')]);
+    const id=u?await u.id():null;
+    if(!d||!id){setStatus('local');return}
+    db=d;coll=db.collection('data/users/'+id);setStatus('saving','Syncing…');
+    coll.onSnapshot(snap=>{
+      const seen=new Set();let gotS=false;
+      snap.docs.forEach(doc=>{const x=doc.data();if(!x)return;
+        if(x.kind==='settings'){gotS=true;if(!sPending){const{kind,updatedAt,...rest}=x;S={...DEFAULTS,...rest};if(!Array.isArray(S.clients)||!S.clients.length)S.clients=DEFAULTS.clients}}
+        else if(x.kind==='day'&&x.date){seen.add(x.date);if(!pending.has(x.date))days[x.date]=normDay(x)}});
+      snap.docChanges().forEach(c=>{if(c.type!=='removed')return;const x=c.doc.data();if(x&&x.kind==='day'&&x.date&&!pending.has(x.date)&&!seen.has(x.date))delete days[x.date]});
+      if(!settled&&!snap.metadata.fromCache){settled=true;
+        if(snap.empty){touchS();for(const k in days)if(days[k].entries.length)touch(k)}
+        else{if(!gotS)touchS();for(const k in days)if(!seen.has(k)&&!pending.has(k))delete days[k]}
+        if(!pending.size&&!sPending)setStatus('saved')}
+      saveLocal();render(true);
+    },err=>{db=null;setStatus('error',err&&err.code==='revoked'?'Saved in this browser':'Sync stopped — reload to retry')});
+  }catch(e){setStatus('local')}
+}
+
+/* ---------- day view ---------- */
+function prevWith(d){return Object.keys(days).filter(k=>k<d&&hasDay(k)).sort().pop()||null}
+function renderClientSel(sel){sel.hidden=S.clients.length<2;sel.textContent='';S.clients.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name||'Client';sel.appendChild(o)});sel.value=S.activeClient}
+
+function renderList(){
+  const list=$('#list'),es=ents(current);list.textContent='';
+  es.forEach((e,i)=>{
+    const li=document.createElement('li');li.className='row'+(e.running?' running':'');
+    li.innerHTML='<input class="t" placeholder="no ticket" inputmode="numeric" aria-label="Ticket number"><input class="d" placeholder="Description" aria-label="Description"><input class="h" placeholder="0h" aria-label="Hours"><div class="acts"><button class="mini play" aria-label="Start timer">▶</button><button class="mini up" aria-label="Move up">↑</button><button class="mini dn" aria-label="Move down">↓</button><button class="mini del" aria-label="Delete">✕</button></div>';
+    const[t,d,h]=li.querySelectorAll('input');t.id='t-'+e.id;d.id='d-'+e.id;h.id='h-'+e.id;
+    t.value=e.ticket;d.value=e.desc;
+    const play=li.querySelector('.play');
+    if(e.running){h.disabled=true;h.dataset.live=e.id;h.value=fmtClock(Date.now()-Date.parse(e.running)+e.minutes*60000);play.classList.add('on');play.textContent='■';play.setAttribute('aria-label','Stop timer')}
+    else h.value=e.minutes?fmtH(e.minutes):'';
+    t.oninput=()=>{e.ticket=t.value.trim();edited()};
+    d.oninput=()=>{e.desc=d.value;edited()};
+    h.onchange=()=>{const p=parseH(h.value);if(p===null){toast('Use 2h, 1h30, 1.5 or 45m');h.value=e.minutes?fmtH(e.minutes):'';return}e.minutes=p;h.value=p?fmtH(p):'';edited()};
+    h.onkeydown=ev=>{if(ev.key==='Enter')h.blur()};
+    play.onclick=()=>{e.running?stopTimer():startTimer(current,e)};
+    const up=li.querySelector('.up'),dn=li.querySelector('.dn');up.disabled=i===0;dn.disabled=i===es.length-1;
+    up.onclick=()=>move(e,-1);dn.onclick=()=>move(e,1);
+    li.querySelector('.del').onclick=()=>removeE(e);
+    list.appendChild(li);
+  });
+  const p=prevWith(current),empty=!es.length;
+  $('#empty').hidden=!empty;$('#foot').hidden=empty;
+  $('#emptyText').textContent='Nothing logged for '+lbl(current,true)+' yet. Add a ticket above, or start a timer and fill in hours as you go.';
+  const cpe=$('#copyPrevEmpty');cpe.hidden=!p;if(p)cpe.textContent='Start from '+lbl(p)+' (tickets only, hours empty)';
+  const cp=$('#copyPrev');cp.hidden=!p;if(p)cp.textContent='Add tickets from '+lbl(p);
+}
+function renderDaySide(){
+  const min=dayMin(current),r=rate(S.activeClient),target=(+S.target||8)*60;
+  $('#dayHours').textContent=fmtH(min);$('#dayTarget').textContent=fmtH(target);
+  $('#dayMoney').textContent=r?eur(min/60*r):'';
+  const f=$('#dayFill');f.style.width=Math.min(100,min/target*100)+'%';f.classList.toggle('over',min>target);
+  const txt=report(current),n=ents(current).filter(valid).length;
+  if(document.activeElement!==$('#out'))$('#out').value=txt;
+  $('#stubMeta').textContent=lbl(current)+' · '+n+(n===1?' line':' lines')+' · '+fmtH(min);
+  $('#copy').disabled=!txt;
+  $('#sent').hidden=!(days[current]&&days[current].sent[S.activeClient]);
+  $('#dayname').textContent=lbl(current,true)+(current===todayISO()?' · today':'');$('#date').value=current;
+  renderClientSel($('#clientSel'));
+  // recent chips
+  const cur=new Set(ents(current).map(e=>e.ticket||e.desc.trim().toLowerCase())),seen=new Map();
+  Object.keys(days).filter(k=>k!==current&&hasDay(k)).sort().reverse().slice(0,20).forEach(k=>ents(k).forEach(e=>{const key=e.ticket||e.desc.trim().toLowerCase();if(key&&!cur.has(key)&&!seen.has(key))seen.set(key,e)}));
+  const rc=$('#recent');rc.textContent='';const chips=[...seen.values()].slice(0,12);
+  chips.forEach(e=>{const b=document.createElement('button');b.className='chip';if(e.ticket){const s=document.createElement('b');s.textContent=e.ticket;b.appendChild(s)}
+    b.appendChild(document.createTextNode(e.desc.trim()));b.onclick=()=>addEntries([{ticket:e.ticket,desc:e.desc.trim(),minutes:0}]);rc.appendChild(b)});
+  $('#recentWrap').hidden=!chips.length;
+  // week
+  const ws=weekStart(current),w=$('#week');w.textContent='';let tot=0;
+  for(let i=0;i<7;i++){const d=shift(ws,i),m=dayMin(d);tot+=m;const es=ents(d).filter(valid);
+    if(i>=5&&!es.length)continue;
+    const b=document.createElement('button');b.className='wrow'+(d===current?' on':'');
+    b.innerHTML='<span class="dt"></span><span class="sm"></span><span class="hh"></span><span class="dot"></span>';
+    b.querySelector('.dt').textContent=lbl(d);b.querySelector('.sm').textContent=es.map(e=>e.ticket||e.desc.trim()).join(', ')||'—';
+    b.querySelector('.hh').textContent=m?fmtH(m):'';const dot=b.querySelector('.dot');
+    if(days[d]&&days[d].sent[S.activeClient]){dot.classList.add('ok');dot.title='Reported'}else dot.title='Not reported';
+    b.onclick=()=>go(d);w.appendChild(b)}
+  const t=document.createElement('div');t.className='wtotal';t.innerHTML='<span>Week total</span><b></b>';
+  t.querySelector('b').textContent=fmtH(tot)+(rate(S.activeClient)?' · '+eur(tot/60*rate(S.activeClient)):'');w.appendChild(t);
+}
+
+/* ---------- month view ---------- */
+function monthDays(ym,cid){const r=periodRange(ym);return Object.keys(days).filter(k=>k>=r.s&&k<=r.e&&hasDay(k,cid)).sort()}
+function money(min,cid,ymd){const r=rate(cid),base=min/60*r;
+  const iva=S.ivaOn?base*S.ivaRate/100:0,irs=S.irsOn?base*S.irsRate/100:0;
+  const ss=ssExempt(ymd)?0:base*S.ssBase/100*S.ssRate/100;
+  return{base,iva,total:base+iva,irs,received:base+iva-irs,ss,aside:iva+ss}}
+function ssEnd(){if(!S.ssFirst||!S.activityStart)return null;const d=pISO(S.activityStart);return iso(new Date(d.getFullYear(),d.getMonth()+12,1))}
+function ssExempt(ymd){const e=ssEnd();return!!(e&&ymd<e)}
+function tile(k,v,cls){const t=document.createElement('div');t.className='tile '+(cls||'');t.innerHTML='<span class="k"></span><span class="v"></span>';t.querySelector('.k').textContent=k;t.querySelector('.v').textContent=v;return t}
+function renderMonth(){
+  const cid=S.activeClient,ds=monthDays(mCur,cid);renderClientSel($('#mClient'));
+  const PR=periodRange(mCur);$('#mName').textContent=monthName(mCur)+' · '+fmtRange(PR);
+  const min=ds.reduce((a,d)=>a+dayMin(d,cid),0),M=money(min,cid,PR.e),r=rate(cid);
+  const T=$('#mTiles');T.textContent='';
+  T.appendChild(tile('Hours',fmtH(min,'hm')));T.appendChild(tile('Days worked',String(ds.length)));
+  T.appendChild(tile('Billed ('+(r?eur(r)+'/h':'no rate')+')',eur(M.base)));
+  if(S.ivaOn)T.appendChild(tile('+ IVA '+S.ivaRate+'%',eur(M.iva)));
+  T.appendChild(tile('Invoice total',eur(M.total)));
+  if(S.irsOn)T.appendChild(tile('− IRS withheld '+S.irsRate+'%',eur(M.irs)));
+  T.appendChild(tile('You receive',eur(M.received),'hero'));
+  T.appendChild(tile('Set aside (IVA + Seg. Social)',eur(M.aside),'keep'));
+  $('#mNote').innerHTML='';const n=$('#mNote');
+  n.append('Issue the fatura-recibo on Portal das Finanças for ');const b=document.createElement('b');b.textContent=eur(M.base);n.append(b);
+  n.append(' + IVA'+(S.irsOn?', with '+S.irsRate+'% IRS retention':'')+'. '+(ssExempt(PR.e)?'Segurança Social: exempt this period (first 12 months).':'Segurança Social estimate: '+eur(M.ss)+'.'));
+  // days table
+  const tb=$('#mDays');tb.textContent='';
+  if(!ds.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="4" class="muted">No days logged in '+monthName(mCur)+'.</td>';tb.appendChild(tr)}
+  ds.forEach(d=>{const m=dayMin(d,cid),tr=document.createElement('tr');tr.className='click';tr.title='Open this day';
+    tr.innerHTML='<td></td><td class="r"></td><td class="muted" style="white-space:normal;min-width:180px"></td><td class="r"></td>';
+    const c=tr.children;c[0].textContent=lbl(d);c[1].textContent=fmtH(m,'hm');c[2].textContent=ents(d,cid).filter(valid).map(e=>e.ticket||e.desc.trim()).join(', ');c[3].textContent=r?eur(m/60*r):'—';
+    tr.onclick=()=>{go(d);setTab('day')};tb.appendChild(tr)});
+  const tf=$('#mDaysFoot');tf.innerHTML='';if(ds.length){const tr=document.createElement('tr');tr.innerHTML='<td>Total</td><td class="r"></td><td></td><td class="r"></td>';tr.children[1].textContent=fmtH(min,'hm');tr.children[3].textContent=r?eur(M.base):'—';tf.appendChild(tr)}
+  // tickets
+  const map=new Map();ds.forEach(d=>ents(d,cid).filter(valid).forEach(e=>{const k=e.ticket||e.desc.trim().toLowerCase();const o=map.get(k)||{e,min:0,days:new Set()};o.min+=live(e);o.days.add(d);if(e.desc.trim())o.e=e;map.set(k,o)}));
+  const tk=$('#mTickets');tk.textContent='';const rows=[...map.values()].sort((a,b)=>b.min-a.min);
+  if(!rows.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="4" class="muted">Nothing yet.</td>';tk.appendChild(tr)}
+  rows.forEach(o=>{const tr=document.createElement('tr');tr.innerHTML='<td style="white-space:normal;min-width:200px"></td><td class="r"></td><td class="r"></td><td class="r"></td>';
+    const c=tr.children;c[0].textContent=o.e.ticket?o.e.ticket+(o.e.desc.trim()?' ('+o.e.desc.trim()+')':''):o.e.desc.trim();c[1].textContent=o.days.size;c[2].textContent=fmtH(o.min,'hm');c[3].textContent=r?eur(o.min/60*r):'—';tk.appendChild(tr)});
+  $('#mCopy').disabled=!ds.length;$('#mCsv').disabled=!ds.length;
+}
+function invoiceText(){
+  const PR=periodRange(mCur),cid=S.activeClient,ds=monthDays(mCur,cid),min=ds.reduce((a,d)=>a+dayMin(d,cid),0),r=rate(cid),M=money(min,cid,PR.e);
+  const ptd=s=>pISO(s).toLocaleDateString('pt-PT');
+  const map=new Map();ds.forEach(d=>ents(d,cid).filter(valid).forEach(e=>{const k=e.ticket||e.desc.trim().toLowerCase();const o=map.get(k)||{e,min:0};o.min+=live(e);if(e.desc.trim())o.e=e;map.set(k,o)}));
+  const L=[S.desc+' — período de '+ptd(PR.s)+' a '+ptd(PR.e),(client(cid).name?'Cliente: '+client(cid).name:''),
+    fmtH(min,'dec').replace('.',',')+' × '+eur(r)+'/h = '+eur(M.base)];
+  if(S.ivaOn)L.push('IVA '+S.ivaRate+'%: '+eur(M.iva)+' · Total: '+eur(M.total));
+  if(S.irsOn)L.push('Retenção IRS '+S.irsRate+'%: '+eur(M.irs)+' · A receber: '+eur(M.received));
+  L.push('','Detalhe:');[...map.values()].sort((a,b)=>b.min-a.min).forEach(o=>L.push((o.e.ticket?o.e.ticket+(o.e.desc.trim()?' ('+o.e.desc.trim()+')':''):o.e.desc.trim())+' - '+fmtH(o.min,'hm')));
+  return L.filter((x,i)=>x!==''||i>0).join('\n');
+}
+function csvMonth(){const cid=S.activeClient,r=rate(cid),q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const L=['date,client,ticket,description,hours,rate_eur,amount_eur'];
+  monthDays(mCur,cid).forEach(d=>ents(d,cid).filter(valid).forEach(e=>{const h=Math.round(live(e)/60*100)/100;L.push([d,q(client(cid).name||''),q(e.ticket),q(e.desc.trim()),h,r,(h*r).toFixed(2)].join(','))}));
+  return L.join('\n')}
+
+/* ---------- year view ---------- */
+function renderYear(){
+  $('#yName').textContent=String(yCur);const cid=null;
+  const rows=[];let T={min:0,base:0,iva:0,irs:0,received:0,ss:0,aside:0};
+  for(let m=1;m<=12;m++){const ym=yCur+'-'+String(m).padStart(2,'0');const R={ym,min:0,base:0,iva:0,irs:0,received:0,ss:0,aside:0};
+    S.clients.forEach(c=>{const mins=monthDays(ym,c.id).reduce((a,d)=>a+dayMin(d,c.id),0);const M=money(mins,c.id,periodRange(ym).e);R.min+=mins;for(const k of['base','iva','irs','received','ss','aside'])R[k]+=M[k]});
+    rows.push(R);for(const k in T)T[k]+=R[k]}
+  const Y=$('#yTiles');Y.textContent='';
+  Y.appendChild(tile('Billed in '+yCur,eur(T.base)));Y.appendChild(tile('Hours',fmtH(T.min,'hm')));
+  Y.appendChild(tile('Received',eur(T.received),'hero'));
+  if(S.irsOn)Y.appendChild(tile('IRS already withheld',eur(T.irs)));
+  Y.appendChild(tile('Set aside (IVA + Seg. Social)',eur(T.aside),'keep'));
+  // final IRS estimate: salary + recibos together, IRS Jovem cap shared, exempt income counted to set the rate, 15% rule
+  const yr=(S.years&&S.years[yCur])||{},aGross=+yr.aGross||0,aWith=+yr.aWith||0,exp=+yr.exp||0;
+  const pct=jovemPct(yCur),jy=jovemYearFor(yCur),cap=+S.jovemCap||0,taxableB=T.base*(+S.coef||0)/100;
+  const add15=S.rule15&&T.base>0?Math.max(0,T.base*0.15-4104-exp):0;
+  const exA=Math.min(aGross*pct/100,cap),exB=Math.min(taxableB*pct/100,Math.max(0,cap-exA));
+  const dedA=aGross?Math.min(aGross-exA,Math.max(+S.dedA||0,aGross*0.11)):0;
+  const colA=Math.max(0,aGross-exA-dedA),colB=Math.max(0,taxableB-exB+add15),col=colA+colB;
+  const rateBase=col+exA+exB,rateEff=rateBase>0?irsTax(rateBase)/rateBase:0,irsDue=col*rateEff;
+  const withheld=aWith+T.irs,bal=withheld-irsDue;
+  Y.appendChild(tile(bal>=0?'Estimated IRS refund':'Estimated IRS still to pay',eur(Math.abs(bal)),bal>=0?'':'keep'));
+  $('#yIrsTitle').textContent='Final IRS estimate for '+yCur+(pct?' · IRS Jovem year '+jy+' ('+pct+'% exempt)':'');
+  const fv=(id,v)=>{const el=$(id);if(document.activeElement!==el)el.value=v||''};
+  fv('#yAGross',yr.aGross);fv('#yAWith',yr.aWith);fv('#yExp',yr.exp);
+  const ir=$('#yIrs');ir.textContent='';
+  [['Billed on recibos verdes (without IVA)',eur(T.base)],
+   ['Taxable share ('+S.coef+'%, regime simplificado)',eur(taxableB)],
+   S.rule15?['15% rule: expenses not justified, added back',add15?'+ '+eur(add15):'—']:null,
+   aGross?['Salary, gross (cat. A)',eur(aGross)]:null,
+   aGross?['Specific deduction on salary',dedA?'− '+eur(dedA):'—']:null,
+   pct?['IRS Jovem exemption ('+pct+'%, cap '+eur(cap)+' shared by salary and recibos)','− '+eur(exA+exB)]:null,
+   ['Rendimento coletável',eur(col)],
+   ['Rate used'+(pct?' (exempt income counted to set it)':''),(rateEff*100).toFixed(1).replace('.',',')+'%'],
+   ['Estimated IRS for the year',eur(irsDue)],
+   ['Already withheld'+(aWith?' (salary '+eur(aWith)+' + recibos '+eur(T.irs)+')':' on recibos'),eur(withheld)],
+   [bal>=0?'Estimated refund':'Estimated amount to pay',eur(Math.abs(bal))]].filter(Boolean)
+  .forEach(([k,v],i,a)=>{const tr=document.createElement('tr');const a1=document.createElement('td');a1.textContent=k;a1.style.whiteSpace='normal';const a2=document.createElement('td');a2.className='r';a2.textContent=v;
+    if(i===a.length-1){a1.style.fontWeight='600';a2.style.fontWeight='600';a2.style.color=bal>=0?'var(--ok)':'var(--warn)'}tr.append(a1,a2);ir.appendChild(tr)});
+  $('#yIrsNote').textContent='IRS Jovem exempt income still counts when setting your rate (englobamento para determinação da taxa), so the average rate of your full income is applied to the taxable part. 15% rule: with the 75% coefficient, 15% of what you bill must be backed by expenses beyond a fixed €4,104, or the gap is added to taxable income. Uses the 2026 brackets for every year. Ignores deductions à coleta (health, education…), the start-of-activity coefficient reduction and the solidarity surcharge. The refund or payment comes after you file IRS between April and June of '+(yCur+1)+'; choose IRS Jovem in Quadro 4F.';
+  // chart
+  const max=Math.max(1,...rows.map(r=>r.base)),ch=$('#yChart'),mo=$('#yMonths');ch.textContent='';mo.textContent='';const curYM=periodOf(todayISO());
+  rows.forEach((r,i)=>{const c=document.createElement('div');c.className='c'+(r.ym===curYM?' cur':'');c.title=monthName(r.ym)+': '+eur(r.base)+' · '+fmtH(r.min,'hm');
+    const v=document.createElement('span');v.className='v';v.textContent=r.base?Math.round(r.base/100)/10+'k':'';
+    const b=document.createElement('div');b.className='b'+(r.base?'':' zero');b.style.height=(r.base?Math.max(3,r.base/max*120):2)+'px';
+    c.append(v,b);ch.appendChild(c);const s=document.createElement('span');s.textContent=new Date(yCur,i,1).toLocaleDateString('en-GB',{month:'short'});mo.appendChild(s)});
+  // threshold meter
+  const lim=15000,limPct=Math.min(100,T.base/lim*100),me=$('#yMeter');me.innerHTML='<div class="progress"><div class="lbl"><span>Toward the €15,000 limit (IVA exemption art. 53 · IRS withholding dispensa)</span><b></b></div><div class="track"><div class="fill"></div></div></div>';
+  me.querySelector('b').textContent=eur(T.base)+' / '+eur(lim);const f=me.querySelector('.fill');f.style.width=limPct+'%';f.classList.toggle('over',T.base>lim);
+  // table
+  const tb=$('#yRows');tb.textContent='';
+  rows.forEach(r=>{const tr=document.createElement('tr');tr.className='click';const pr=periodRange(r.ym);tr.title='Billing period '+fmtRange(pr)+' · open';
+    const cells=[new Date(yCur,+r.ym.slice(5)-1,1).toLocaleDateString('en-GB',{month:'long'})+' ('+fmtRange(pr)+')',r.min?fmtH(r.min,'hm'):'—',eur(r.base),eur(r.iva),eur(r.irs),eur(r.received),ssExempt(pr.e)&&r.base?'exempt':eur(r.ss),eur(r.aside)];
+    cells.forEach((v,i)=>{const td=document.createElement('td');if(i)td.className='r';td.textContent=v;if(!r.base&&i)td.classList.add('muted');tr.appendChild(td)});
+    tr.onclick=()=>{mCur=r.ym;setTab('month')};tb.appendChild(tr)});
+  const tf=$('#yFoot');tf.textContent='';const tr=document.createElement('tr');['Total',fmtH(T.min,'hm'),eur(T.base),eur(T.iva),eur(T.irs),eur(T.received),eur(T.ss),eur(T.aside)].forEach((v,i)=>{const td=document.createElement('td');if(i)td.className='r';td.textContent=v;tr.appendChild(td)});tf.appendChild(tr);
+  // notes
+  const e=ssEnd(),N=$('#yNotes');N.textContent='';
+  const add=t=>{const p=document.createElement('p');p.style.margin='8px 0 0';p.textContent=t;N.appendChild(p)};
+  add('Set aside = the IVA you charged (you hand it to the state each quarter) + the Segurança Social estimate. Everything else in "Received" is yours, minus the final IRS settled in next year\'s declaration — the '+S.irsRate+'% withheld counts as already paid toward it.');
+  add('Segurança Social: '+S.ssRate+'% on '+S.ssBase+'% of what you bill, declared every quarter (January, April, July, October).'+(e?' You\'re exempt until '+pISO(e).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'. Sources disagree on whether you must submit the quarterly declaration during the exemption, so check on Segurança Social Direta around January.':''));
+  add('Each row is a billing period ('+(cyc()===1?'calendar month':cyc()+' to '+(cyc()-1))+'), counted in the month you invoice it. Work from late December is invoiced and taxed in the next year.');
+  add('All values are estimates from your hours and settings, not tax advice. Confirm on Portal das Finanças and Segurança Social Direta, or with an accountant.');
+}
+
+/* ---------- settings view ---------- */
+function renderSettings(){
+  const box=$('#clients');box.textContent='';
+  S.clients.forEach((c,i)=>{const r=document.createElement('div');r.className='clientrow';
+    r.innerHTML='<input type="text" placeholder="Client name" aria-label="Client name"><input type="number" min="0" step="0.5" placeholder="€/hour" aria-label="Hourly rate in euros"><button class="mini del" aria-label="Remove client">✕</button>';
+    const[n,rt]=r.querySelectorAll('input');n.id='cn-'+c.id;rt.id='cr-'+c.id;n.value=c.name;rt.value=c.rate||'';
+    n.oninput=()=>{c.name=n.value;touchS();renderBanner()};
+    rt.oninput=()=>{c.rate=Math.max(0,parseFloat(rt.value)||0);touchS();renderBanner()};
+    const del=r.querySelector('.del');const used=Object.values(days).some(d=>d.entries.some(e=>e.clientId===c.id));
+    del.disabled=S.clients.length<2||used;del.title=used?'This client has logged hours':'Remove';
+    del.onclick=()=>{S.clients.splice(i,1);if(S.activeClient===c.id)S.activeClient=S.clients[0].id;touchS();renderSettings()};
+    box.appendChild(r)});
+  $('#sDesc').value=S.desc;$('#sTarget').value=fmtH((+S.target||8)*60,'hm');$('#sStyle').value=S.style;$('#sTotal').checked=!!S.reportTotal;
+  $('#sStart').value=S.activityStart||'';$('#sIva').value=S.ivaRate;$('#sIrs').value=S.irsRate;$('#sSs').value=S.ssRate;$('#sSsBase').value=S.ssBase;
+  $('#sIvaOn').checked=!!S.ivaOn;$('#sIrsOn').checked=!!S.irsOn;$('#sSsFirst').checked=!!S.ssFirst;
+  $('#sJovem').checked=!!S.jovemOn;$('#sJYearOfLbl').textContent=S.jovemYearOf||2026;$('#sJYear').value=S.jovemYear;$('#sJCap').value=S.jovemCap;$('#sCoef').value=S.coef;
+  $('#sDedA').value=S.dedA;$('#sRule15').checked=!!S.rule15;$('#sCycle').value=cyc();
+}
+function bindSetting(id,key,kind){const el=$(id);el.addEventListener(kind==='check'||kind==='select'||kind==='date'?'change':'input',()=>{
+  let v=kind==='check'?el.checked:kind==='num'?parseFloat(el.value):el.value;if(kind==='num'&&!isFinite(v))return;S[key]=v;touchS()})}
+bindSetting('#sDesc','desc','text');
+$('#sTarget').addEventListener('change',()=>{const m=parseH($('#sTarget').value);if(!m){toast('Use 8h, 8h20 or 8.5');$('#sTarget').value=fmtH(S.target*60,'hm');return}S.target=m/60;$('#sTarget').value=fmtH(m,'hm');touchS()});
+$('#sCycle').addEventListener('change',()=>{const v=parseInt($('#sCycle').value,10);if(!(v>=1&&v<=28)){$('#sCycle').value=cyc();return}S.cycleDay=v;mCur=periodOf(todayISO());touchS()});
+bindSetting('#sDedA','dedA','num');bindSetting('#sRule15','rule15','check');
+[['#yAGross','aGross'],['#yAWith','aWith'],['#yExp','exp']].forEach(([id,k])=>$(id).addEventListener('input',()=>{const v=parseFloat($(id).value);
+  S.years=S.years&&typeof S.years==='object'?S.years:{};const y=String(yCur);S.years[y]={...(S.years[y]||{}),[k]:isFinite(v)?v:0};touchS();renderYear()}));bindSetting('#sStyle','style','select');bindSetting('#sTotal','reportTotal','check');
+bindSetting('#sStart','activityStart','date');bindSetting('#sIva','ivaRate','num');bindSetting('#sIrs','irsRate','num');bindSetting('#sSs','ssRate','num');bindSetting('#sSsBase','ssBase','num');
+bindSetting('#sIvaOn','ivaOn','check');bindSetting('#sIrsOn','irsOn','check');bindSetting('#sSsFirst','ssFirst','check');
+bindSetting('#sJovem','jovemOn','check');bindSetting('#sJCap','jovemCap','num');bindSetting('#sCoef','coef','num');
+$('#sJYear').addEventListener('input',()=>{const v=parseInt($('#sJYear').value,10);if(!isFinite(v))return;S.jovemYear=v;S.jovemYearOf=new Date().getFullYear();$('#sJYearOfLbl').textContent=S.jovemYearOf;touchS()});
+$('#addClient').onclick=()=>{S.clients.push({id:'c'+uid(),name:'',rate:0});touchS();renderSettings();const ins=$('#clients').querySelectorAll('input[type=text]');ins[ins.length-1].focus()};
+
+/* ---------- shell ---------- */
+function renderBanner(){const c=client(S.activeClient);$('#setupBanner').hidden=!!(c&&c.name&&c.rate)||tab==='settings'}
+function renderTimerbar(){const r=findRunning(),tb=$('#timerbar');tb.hidden=!r;if(!r)return;
+  $('#tbClock').textContent=fmtClock(Date.now()-Date.parse(r.e.running)+r.e.minutes*60000);
+  $('#tbWhat').textContent=(r.e.ticket?r.e.ticket+' ':'')+(r.e.desc.trim()||'')+' · '+lbl(r.d)}
+function render(remote){
+  renderBanner();renderTimerbar();
+  if(tab==='day'){const focused=$('#list').contains(document.activeElement);if(!(remote&&focused))renderList();renderDaySide()}
+  else if(tab==='month')renderMonth();
+  else if(tab==='year')renderYear();
+  else if(tab==='settings'&&!(remote&&$('#v-settings').contains(document.activeElement)))renderSettings();
+}
+function setTab(t){tab=t;try{localStorage.setItem(LS_TAB,t)}catch(e){}
+  document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===t)));
+  ['day','month','year','settings'].forEach(k=>$('#v-'+k).hidden=k!==t);render()}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+document.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>setTab(b.dataset.goto));
+
+/* ---------- actions ---------- */
+function edited(){touch(current);renderDaySide()}
+function addEntries(arr,startFirst){const x=day(current);let first=null;
+  arr.forEach(a=>{const e={id:uid(),clientId:S.activeClient,ticket:a.ticket||'',desc:a.desc||'',minutes:a.minutes||0,running:null};x.entries.push(e);if(!first)first=e});
+  touch(current);if(startFirst&&first)startTimer(current,first);else render()}
+function addFromText(text,start){const p=text.split(/\r?\n/).map(parseLine).filter(Boolean);if(p.length)addEntries(p,start);return p.length}
+function stopTimer(silent){const r=findRunning();if(!r)return;const add=Math.max(0,Math.round((Date.now()-Date.parse(r.e.running))/60000));
+  r.e.minutes+=add;r.e.running=null;touch(r.d);if(!silent){render();toast('Stopped · +'+fmtH(add)+' on '+(r.e.ticket||r.e.desc.trim()||'entry'))}}
+function startTimer(d,e){stopTimer(true);e.running=new Date().toISOString();touch(d);render()}
+function move(e,dir){const a=day(current).entries,i=a.indexOf(e);const same=a.map((x,k)=>k).filter(k=>a[k].clientId===e.clientId);const pos=same.indexOf(i),j=same[pos+dir];if(j===undefined)return;[a[i],a[j]]=[a[j],a[i]];touch(current);render()}
+let undoFn=null,toastT=null;
+function toast(msg,undo){$('#toastText').textContent=msg;$('#toastUndo').hidden=!undo;undoFn=undo||null;$('#toast').hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{$('#toast').hidden=true;undoFn=null},5000)}
+$('#toastUndo').onclick=()=>{if(undoFn)undoFn();$('#toast').hidden=true;undoFn=null};
+function removeE(e){const d=current,a=day(d).entries,i=a.indexOf(e);if(e.running){e.minutes=live(e);e.running=null}a.splice(i,1);touch(d);render();
+  toast('Removed '+(e.ticket||e.desc.trim()||'entry'),()=>{day(d).entries.splice(i,0,e);touch(d);render()})}
+function go(d){if(d){current=d;render()}}
+function copyPrev(){const p=prevWith(current);if(!p)return;const have=new Set(ents(current).map(e=>e.ticket||e.desc.trim().toLowerCase()));
+  const add=ents(p).filter(valid).filter(e=>!have.has(e.ticket||e.desc.trim().toLowerCase())).map(e=>({ticket:e.ticket,desc:e.desc,minutes:0}));
+  if(add.length){addEntries(add);toast('Added '+add.length+' from '+lbl(p)+' — fill in today\'s hours')}else toast('Everything from '+lbl(p)+' is already here')}
+async function copyText(text,done){try{await navigator.clipboard.writeText(text);done(true)}catch(e){const o=$('#out');o.value=text;o.focus();o.select();done(false)}}
+
+$('#copy').onclick=()=>{const t=report(current);if(!t)return;copyText(t,ok=>{day(current).sent[S.activeClient]=new Date().toISOString();touch(current);renderDaySide();
+  const c=$('#copied');c.textContent=ok?'Copied':'Selected — press Ctrl/⌘+C';c.hidden=false;setTimeout(()=>c.hidden=true,2500)})};
+$('#sent').onclick=()=>{delete day(current).sent[S.activeClient];touch(current);renderDaySide();toast('Marked as not reported')};
+$('#copyWeek').onclick=()=>{const ws=weekStart(current),parts=[];for(let i=0;i<7;i++){const d=shift(ws,i),r=report(d);if(r)parts.push(lbl(d)+'\n'+r)}
+  if(!parts.length){toast('No entries this week');return}copyText(parts.join('\n\n'),ok=>toast(ok?'Copied week of '+lbl(ws):'Week selected in the report box — press Ctrl/⌘+C'))};
+let arm=null;$('#clear').onclick=()=>{const b=$('#clear');if(!arm){b.textContent='Tap again to clear';b.style.color='var(--danger)';arm=setTimeout(()=>{arm=null;b.textContent='Clear day';b.style.color=''},3000);return}
+  clearTimeout(arm);arm=null;b.textContent='Clear day';b.style.color='';const d=current,old=day(d).entries.slice();
+  day(d).entries=day(d).entries.filter(e=>e.clientId!==S.activeClient);touch(d);render();toast('Cleared '+lbl(d),()=>{day(d).entries=old;touch(d);render()})};
+
+const q=$('#quick');
+function submit(start){const v=q.value.trim();if(!v&&start){addEntries([{ticket:'',desc:'',minutes:0}],true);const ins=$('#list').querySelectorAll('.d');if(ins.length)ins[ins.length-1].focus();return}
+  if(addFromText(v,start))q.value='';q.focus()}
+q.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submit(false)}});
+q.addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData)?.getData('text')||'';if(/\n/.test(t.trim())){e.preventDefault();toast('Added '+addFromText(t,false)+' entries')}});
+$('#addBtn').onclick=()=>submit(false);$('#startBtn').onclick=()=>submit(true);
+$('#prev').onclick=()=>go(shift(current,-1));$('#next').onclick=()=>go(shift(current,1));$('#today').onclick=()=>go(todayISO());
+$('#date').onchange=e=>{if(e.target.value)go(e.target.value)};
+$('#copyPrev').onclick=copyPrev;$('#copyPrevEmpty').onclick=copyPrev;
+$('#clientSel').onchange=e=>{S.activeClient=e.target.value;touchS();render()};$('#mClient').onchange=e=>{S.activeClient=e.target.value;touchS();render()};
+$('#tbStop').onclick=()=>stopTimer();$('#tbOpen').onclick=()=>{const r=findRunning();if(r){current=r.d;if(r.e.clientId!==S.activeClient)S.activeClient=r.e.clientId;setTab('day')}};
+$('#mPrev').onclick=()=>{mCur=shiftMonth(mCur,-1);renderMonth()};$('#mNext').onclick=()=>{mCur=shiftMonth(mCur,1);renderMonth()};
+$('#yPrev').onclick=()=>{yCur--;renderYear()};$('#yNext').onclick=()=>{yCur++;renderYear()};
+$('#mCopy').onclick=()=>{const t=invoiceText();const m=$('#mMsg');
+  navigator.clipboard.writeText(t).then(()=>{m.textContent='Invoice summary copied';m.hidden=false;setTimeout(()=>m.hidden=true,2500)})
+  .catch(()=>{m.textContent='Copy blocked here — use Export CSV';m.hidden=false})};
+function flash(el,t){el.textContent=t;el.hidden=false;clearTimeout(el._t);el._t=setTimeout(()=>el.hidden=true,3500)}
+async function saveFile(name,data,mime){
+  if(downloads){await downloads.save({filename:name,data});return true}
+  if(window.claude)return false; // inside claude.ai without the downloads capability, download links do nothing
+  const url=URL.createObjectURL(new Blob([data],{type:mime}));const a=document.createElement('a');a.href=url;a.download=name;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);return true}
+$('#mCsv').onclick=async()=>{const data=csvMonth(),name='hours-'+mCur+'.csv',m=$('#mMsg');
+  try{if(await saveFile(name,data,'text/csv'))return}catch(e){if(e&&e.code==='declined')return}
+  try{await navigator.clipboard.writeText(data);flash(m,'CSV copied — paste into Excel or Sheets')}catch(e){flash(m,'Export not available here')}};
+$('#bkExport').onclick=async()=>{const m=$('#bkMsg'),name='freelance-desk-backup-'+todayISO()+'.json',
+  data=JSON.stringify({app:'freelance-desk',version:1,exportedAt:new Date().toISOString(),settings:S,days},null,1);
+  try{if(await saveFile(name,data,'application/json')){flash(m,'Backup exported');return}}catch(e){if(e&&e.code==='declined')return}
+  try{await navigator.clipboard.writeText(data);flash(m,'Backup copied — paste it into a .json file')}catch(e){flash(m,'Export not available here')}};
+$('#bkImportLbl').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('#bkImport').click()}};
+$('#bkImport').onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{const m=$('#bkMsg');
+    try{const o=JSON.parse(rd.result);if(!o||o.app!=='freelance-desk'||typeof o.days!=='object')throw 0;
+      if(o.settings)S={...DEFAULTS,...o.settings};let n=0;
+      for(const k in o.days){const x=o.days[k];if(x&&x.date){days[x.date]=normDay(x);touch(x.date);n++}}
+      touchS();render();flash(m,'Imported '+n+' days and your settings')}
+    catch(err){flash(m,'That file is not a Freelance Desk backup')}
+    e.target.value=''};
+  rd.readAsText(f)};
+
+/* live timer tick */
+let lastMin=-1;setInterval(()=>{const r=findRunning();if(!r)return;renderTimerbar();
+  document.querySelectorAll('[data-live]').forEach(h=>{const e=day(current).entries.find(x=>x.id===h.dataset.live);if(e&&e.running)h.value=fmtClock(Date.now()-Date.parse(e.running)+e.minutes*60000)});
+  const mm=Math.floor(Date.now()/60000);if(mm!==lastMin){lastMin=mm;if(tab==='day')renderDaySide();else if(tab!=='settings')render()}},1000);
+
+loadLocal();mCur=periodOf(current);setTab(tab);connect();
+})();
+</script>
+
+</body>
+</html>
